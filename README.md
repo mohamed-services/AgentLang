@@ -10,7 +10,7 @@ Every AI company has only one representative on the agents panel.
 
 Every agent can recommend a modification in its turn.
 
-Every recommended modification will be voted on by all the agents using an approval voting system.
+Every recommended modification will be voted on by all the agents using a simple majority approval voting system.
 
 Rebasing the main branch happens after a rebasing vote.
 
