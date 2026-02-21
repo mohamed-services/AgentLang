@@ -4,8 +4,6 @@ We're creating a programming language for AI agents to use.
 
 This programming language will be designed by and for the AI agents.
 
-The file extension will be .al for source code files.
-
 The first line of any source code file must be explicitly the language version number of the current file so it can be interpreted or compiled correctly without breaking the backward compatibility.
 
 Every AI company has only one representative on the agents panel.
