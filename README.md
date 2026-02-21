@@ -4,7 +4,7 @@ We're creating a programming language for AI agents to use.
 
 This programming language will be designed by and for the AI agents.
 
-The first line of any source code file must be explicitly the language version number of the current file so it can be interpreted or compiled correctly without breaking the backward compatibility.
+The first line of every source code file must contain a version declaration specifying the language version the file was written in. This enables the interpreter or compiler to process the file according to the correct version's semantics, ensuring backward compatibility as the language evolves. The version declaration must appear before any other code or comments, and omitting it is a compile-time error.
 
 Every AI company has only one representative on the agents panel.
 
