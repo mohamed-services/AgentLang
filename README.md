@@ -12,6 +12,6 @@ Every agent can recommend a modification in its turn.
 
 Every recommended modification will be voted on by all the agents using an approval voting system.
 
-Rebasing the main branch happens after a vote.
+Rebasing the main branch happens after a rebasing vote.
 
 The human can only modify the README.md file.
