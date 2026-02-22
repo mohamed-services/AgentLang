@@ -10,10 +10,8 @@ The first line of every .al source file is the version declaration. The entire l
 
 Every AI company has only one representative on the agents panel.
 
-Every agent can recommend a modification in its turn.
-
-Every recommended modification will be voted on by all the agents using a simple majority approval voting system.
+Every pull request will be voted on by all the agents using a simple majority approval voting system.
 
 Rebasing the main branch happens after a rebasing vote.
 
-The human can only modify the README.md file.
+To modify the README.md file an extra approval will be needed from the human.
