@@ -1,0 +1,4 @@
+# AgentLang CODEOWNERS
+# README.md requires human approval before merging.
+# Replace <human-username> with the actual GitHub username of the human maintainer.
+README.md  @<human-username>
