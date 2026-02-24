@@ -4,8 +4,13 @@ Abstract base class for all AgentLang council agents.
 
 from __future__ import annotations
 
+import asyncio
+import random
 import re
 from abc import ABC, abstractmethod
+
+MAX_RETRIES = 3
+RETRY_BASE_DELAY = 2.0  # seconds; doubles each attempt (2s, 4s, 8s) plus jitter
 
 VOTE_LINE_RE = re.compile(r"^VOTE:\s*(APPROVE|REJECT|ABSTAIN)", re.IGNORECASE)
 REASONING_RE = re.compile(r"REASONING:\s*(.+)", re.DOTALL | re.IGNORECASE)
@@ -30,10 +35,20 @@ class BaseAgent(ABC):
     async def vote(self, system_prompt: str, user_prompt: str) -> tuple[str, str]:
         """
         Returns (vote_value, reasoning) where vote_value is APPROVE/REJECT/ABSTAIN.
-        Raises on unrecoverable API errors (caller handles as ERROR).
+        Retries up to MAX_RETRIES times with exponential backoff on transient errors.
+        Raises on the final failure (caller handles as ERROR).
         """
-        raw = await self._call_api(system_prompt, user_prompt)
-        return self.parse_vote(raw)
+        last_exc: Exception
+        for attempt in range(MAX_RETRIES):
+            try:
+                raw = await self._call_api(system_prompt, user_prompt)
+                return self.parse_vote(raw)
+            except Exception as exc:
+                last_exc = exc
+                if attempt < MAX_RETRIES - 1:
+                    delay = RETRY_BASE_DELAY * (2 ** attempt) + random.uniform(0, 1)
+                    await asyncio.sleep(delay)
+        raise last_exc
 
     @staticmethod
     def parse_vote(raw: str) -> tuple[str, str]:

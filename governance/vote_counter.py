@@ -7,7 +7,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-from config import APPROVAL_THRESHOLD, SUPERMAJORITY_THRESHOLD, SUMMARY_COMMENT_MARKER
+from config import APPROVAL_THRESHOLD, SUPERMAJORITY_THRESHOLD, MIN_VOTES, SUMMARY_COMMENT_MARKER
 
 VoteValue = Literal["APPROVE", "REJECT", "ABSTAIN", "ERROR", "DISABLED"]
 
@@ -33,10 +33,10 @@ def tally(records: list[AgentVoteRecord], threshold: float = APPROVAL_THRESHOLD)
     """
     Compute the vote outcome.
 
-    Only APPROVE / REJECT votes from agents that actually responded (no ERROR)
-    count toward the majority. ABSTAIN and ERROR are excluded from the denominator.
+    All votes (APPROVE, REJECT, ABSTAIN, ERROR) count toward the denominator.
     DISABLED agents are shown for transparency but do not participate.
     Pass threshold=SUPERMAJORITY_THRESHOLD for governance/workflow changes.
+    Quorum (MIN_VOTES non-ERROR responses) must be met for the vote to be valid.
     """
     approvals = sum(1 for r in records if r.vote == "APPROVE")
     rejections = sum(1 for r in records if r.vote == "REJECT")
@@ -44,10 +44,13 @@ def tally(records: list[AgentVoteRecord], threshold: float = APPROVAL_THRESHOLD)
     errors = sum(1 for r in records if r.vote == "ERROR")
     disabled = sum(1 for r in records if r.vote == "DISABLED")
 
+    eligible = approvals + rejections + abstentions + errors  # all participating agents; errors count as abstentions
+    quorum_met = eligible >= MIN_VOTES
+
     denominator = approvals + rejections + abstentions + errors
-    if denominator == 0:
+    if denominator == 0 or not quorum_met:
         approved = False
-        ratio = 0.0
+        ratio = approvals / denominator if denominator > 0 else 0.0
     else:
         ratio = approvals / denominator
         approved = ratio > threshold
@@ -62,6 +65,8 @@ def tally(records: list[AgentVoteRecord], threshold: float = APPROVAL_THRESHOLD)
         "ratio": ratio,
         "threshold": threshold,
         "denominator": denominator,
+        "eligible": eligible,
+        "quorum_met": quorum_met,
     }
 
 
@@ -99,6 +104,11 @@ def format_summary_comment(
 
     if t["denominator"] == 0:
         result_line = "**Result: NO VOTE** — no eligible votes cast"
+    elif not t["quorum_met"]:
+        result_line = (
+            f"**Result: ❌ NO QUORUM** — only {t['eligible']} of {MIN_VOTES} required "
+            f"non-error responses received ({counts})"
+        )
     elif t["approved"]:
         result_line = f"**Result: ✅ APPROVED** ({counts}, {ratio_pct} > {required_pct} required)"
     else:
@@ -114,7 +124,7 @@ def format_summary_comment(
 
     if t["errors"] > 0:
         lines.append(
-            f"\n> ⚠️ {t['errors']} agent(s) encountered API errors and were excluded from the vote count."
+            f"\n> ⚠️ {t['errors']} agent(s) encountered API errors and are counted as abstentions."
         )
 
     lines.append("")

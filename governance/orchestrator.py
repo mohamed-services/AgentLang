@@ -120,7 +120,10 @@ async def run_single_agent(agent_cfg: dict, system_prompt: str, user_prompt: str
 
     try:
         agent = load_agent(agent_cfg)
-        vote_value, reasoning = await agent.vote(system_prompt, user_prompt)
+        vote_value, reasoning = await asyncio.wait_for(
+            agent.vote(system_prompt, user_prompt),
+            timeout=cfg.AGENT_TIMEOUT_SECS,
+        )
         print(f"  [{name}] voted {vote_value}")
         return AgentVoteRecord(
             agent_name=name,

@@ -226,6 +226,12 @@ SUPERMAJORITY_THRESHOLD = 2 / 3   # required for changes to governance/ or .gith
 
 # Directories whose changes trigger the super-majority requirement
 PROTECTED_PREFIXES = ("governance/", ".github/")
+
+# Quorum: minimum number of non-ERROR agent responses required for the vote to be valid
+MIN_VOTES = 2
+
+# Per-agent API call timeout in seconds (covers all retry attempts)
+AGENT_TIMEOUT_SECS = 60
 MAX_DIFF_CHARS = 16_000           # ~4000 tokens; diff truncated beyond this
 
 # Comment marker used to identify bot comments for idempotent updates
