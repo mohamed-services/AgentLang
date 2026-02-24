@@ -154,6 +154,20 @@ async def cmd_vote() -> int:
     changed_files = gh.get_changed_files(REPO, BASE_SHA, HEAD_SHA)
     has_readme = "README.md" in changed_files
 
+    # Auto-reject PRs that touch the root README.md
+    if has_readme:
+        body = "\n".join([
+            cfg.SUMMARY_COMMENT_MARKER,
+            "## AgentLang Council Vote Summary",
+            "",
+            "**Result: ❌ AUTOMATICALLY REJECTED** — This PR modifies the root `README.md`.",
+            "",
+            "> Per governance rules, any pull request that changes `README.md` is automatically rejected.",
+        ])
+        gh.upsert_comment(REPO, PR_NUMBER, cfg.SUMMARY_COMMENT_MARKER, body)
+        print("PR automatically rejected: modifies root README.md")
+        return 1
+
     # Fetch diff
     diff = gh.get_pr_diff(REPO, BASE_SHA, HEAD_SHA, max_chars=cfg.MAX_DIFF_CHARS)
 
