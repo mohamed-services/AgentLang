@@ -43,7 +43,7 @@ def tally(records: list[AgentVoteRecord]) -> dict:
     errors = sum(1 for r in records if r.vote == "ERROR")
     disabled = sum(1 for r in records if r.vote == "DISABLED")
 
-    denominator = approvals + rejections
+    denominator = approvals + rejections + abstentions + errors
     if denominator == 0:
         approved = False
         ratio = 0.0
