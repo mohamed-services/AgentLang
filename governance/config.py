@@ -222,6 +222,10 @@ AGENTS: list[dict] = [
 
 # Voting thresholds
 APPROVAL_THRESHOLD = 0.5          # approvals / (approvals + rejections) must exceed this
+SUPERMAJORITY_THRESHOLD = 2 / 3   # required for changes to governance/ or .github/
+
+# Directories whose changes trigger the super-majority requirement
+PROTECTED_PREFIXES = ("governance/", ".github/")
 MAX_DIFF_CHARS = 16_000           # ~4000 tokens; diff truncated beyond this
 
 # Comment marker used to identify bot comments for idempotent updates

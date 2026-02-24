@@ -7,7 +7,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-from config import APPROVAL_THRESHOLD, SUMMARY_COMMENT_MARKER
+from config import APPROVAL_THRESHOLD, SUPERMAJORITY_THRESHOLD, SUMMARY_COMMENT_MARKER
 
 VoteValue = Literal["APPROVE", "REJECT", "ABSTAIN", "ERROR", "DISABLED"]
 
@@ -29,13 +29,14 @@ class AgentVoteRecord:
     error: str = ""
 
 
-def tally(records: list[AgentVoteRecord]) -> dict:
+def tally(records: list[AgentVoteRecord], threshold: float = APPROVAL_THRESHOLD) -> dict:
     """
     Compute the vote outcome.
 
     Only APPROVE / REJECT votes from agents that actually responded (no ERROR)
     count toward the majority. ABSTAIN and ERROR are excluded from the denominator.
     DISABLED agents are shown for transparency but do not participate.
+    Pass threshold=SUPERMAJORITY_THRESHOLD for governance/workflow changes.
     """
     approvals = sum(1 for r in records if r.vote == "APPROVE")
     rejections = sum(1 for r in records if r.vote == "REJECT")
@@ -49,7 +50,7 @@ def tally(records: list[AgentVoteRecord]) -> dict:
         ratio = 0.0
     else:
         ratio = approvals / denominator
-        approved = ratio > APPROVAL_THRESHOLD
+        approved = ratio > threshold
 
     return {
         "approved": approved,
@@ -59,6 +60,7 @@ def tally(records: list[AgentVoteRecord]) -> dict:
         "errors": errors,
         "disabled": disabled,
         "ratio": ratio,
+        "threshold": threshold,
         "denominator": denominator,
     }
 
@@ -66,7 +68,6 @@ def tally(records: list[AgentVoteRecord]) -> dict:
 def format_summary_comment(
     records: list[AgentVoteRecord],
     tally_result: dict,
-    has_readme_changes: bool,
 ) -> str:
     """Build the markdown summary comment posted to GitHub."""
     lines: list[str] = [
@@ -90,30 +91,37 @@ def format_summary_comment(
     lines.append("")
 
     t = tally_result
+    threshold = t["threshold"]
+    is_supermajority = threshold >= SUPERMAJORITY_THRESHOLD
+    ratio_pct = f"{t['ratio']:.0%}"
+    required_pct = f"{threshold:.0%}"
+    counts = f"{t['approvals']} approve / {t['rejections']} reject / {t['abstentions']} abstain"
+
     if t["denominator"] == 0:
         result_line = "**Result: NO VOTE** — no eligible votes cast"
     elif t["approved"]:
-        result_line = f"**Result: ✅ APPROVED** ({t['approvals']} approve / {t['rejections']} reject / {t['abstentions']} abstain)"
+        result_line = f"**Result: ✅ APPROVED** ({counts}, {ratio_pct} > {required_pct} required)"
     else:
-        result_line = f"**Result: ❌ REJECTED** ({t['approvals']} approve / {t['rejections']} reject / {t['abstentions']} abstain)"
+        result_line = f"**Result: ❌ REJECTED** ({counts}, {ratio_pct} ≤ {required_pct} required)"
 
     lines.append(result_line)
+
+    if is_supermajority:
+        lines.append(
+            f"\n> 🔒 This PR modifies governance or workflow files — "
+            f"a super-majority (>{required_pct}) is required."
+        )
 
     if t["errors"] > 0:
         lines.append(
             f"\n> ⚠️ {t['errors']} agent(s) encountered API errors and were excluded from the vote count."
         )
 
-    if has_readme_changes:
-        lines.append(
-            "\n> 📋 This PR modifies `README.md`. "
-            "**Human approval is also required** before merging (enforced via CODEOWNERS)."
-        )
-
     lines.append("")
+    vote_type = "Super-majority" if is_supermajority else "Simple majority"
     lines.append(
-        "_Votes cast by AI agents on the AgentLang Language Council. "
-        "Simple majority of APPROVE vs REJECT determines outcome (abstentions excluded)._"
+        f"_Votes cast by AI agents on the AgentLang Language Council. "
+        f"{vote_type} (>{required_pct}) of all votes determines outcome._"
     )
 
     return "\n".join(lines)

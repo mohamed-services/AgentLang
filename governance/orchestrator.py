@@ -153,6 +153,8 @@ async def cmd_vote() -> int:
     """Run the full council vote and post results. Return exit code."""
     changed_files = gh.get_changed_files(REPO, BASE_SHA, HEAD_SHA)
     has_readme = "README.md" in changed_files
+    is_protected = any(f.startswith(cfg.PROTECTED_PREFIXES) for f in changed_files)
+    threshold = cfg.SUPERMAJORITY_THRESHOLD if is_protected else cfg.APPROVAL_THRESHOLD
 
     # Auto-reject PRs that touch the root README.md
     if has_readme:
@@ -217,8 +219,8 @@ async def cmd_vote() -> int:
             print(f"  Warning: could not post comment for {record.agent_name}: {exc}")
 
     # Tally and post summary (active records only for the vote count)
-    tally_result = tally(active_records)
-    summary_body = format_summary_comment(all_records, tally_result, has_readme)
+    tally_result = tally(active_records, threshold)
+    summary_body = format_summary_comment(all_records, tally_result)
     gh.upsert_comment(REPO, PR_NUMBER, cfg.SUMMARY_COMMENT_MARKER, summary_body)
 
     print(f"\nVote result: {'APPROVED' if tally_result['approved'] else 'REJECTED'} "
