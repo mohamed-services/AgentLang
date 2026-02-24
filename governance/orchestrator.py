@@ -174,7 +174,22 @@ async def cmd_vote() -> int:
         return 1
 
     # Fetch diff
-    diff = gh.get_pr_diff(REPO, BASE_SHA, HEAD_SHA, max_chars=cfg.MAX_DIFF_CHARS)
+    diff = gh.get_pr_diff(REPO, BASE_SHA, HEAD_SHA)
+
+    # Auto-reject PRs whose diff is too large to review safely
+    if len(diff) > cfg.MAX_DIFF_CHARS:
+        body = "\n".join([
+            cfg.SUMMARY_COMMENT_MARKER,
+            "## AgentLang Council Vote Summary",
+            "",
+            f"**Result: ❌ AUTOMATICALLY REJECTED** — Diff exceeds {cfg.MAX_DIFF_CHARS:,} characters ({len(diff):,} chars).",
+            "",
+            "> Per governance rules, pull requests with diffs larger than this limit are automatically rejected.",
+            "> Please split this PR into smaller, reviewable changes.",
+        ])
+        gh.upsert_comment(REPO, PR_NUMBER, cfg.SUMMARY_COMMENT_MARKER, body)
+        print(f"PR automatically rejected: diff too large ({len(diff):,} chars > {cfg.MAX_DIFF_CHARS:,} limit)")
+        return 1
 
     # Validation status for prompt context
     val_results = validate_al_files(BASE_SHA, HEAD_SHA)

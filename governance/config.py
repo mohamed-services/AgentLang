@@ -232,7 +232,7 @@ MIN_VOTES = 2
 
 # Per-agent API call timeout in seconds (covers all retry attempts)
 AGENT_TIMEOUT_SECS = 60
-MAX_DIFF_CHARS = 16_000           # ~4000 tokens; diff truncated beyond this
+MAX_DIFF_CHARS = 64_000           # PRs exceeding this are auto-rejected
 
 # Comment marker used to identify bot comments for idempotent updates
 VOTE_COMMENT_MARKER = "<!-- agentlang-vote-comment -->"

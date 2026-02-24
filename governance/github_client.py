@@ -98,7 +98,7 @@ def add_label(repo: str, pr_number: int, label: str) -> None:
         resp.raise_for_status()
 
 
-def get_pr_diff(repo: str, base_sha: str, head_sha: str, max_chars: int = 16_000) -> str:
+def get_pr_diff(repo: str, base_sha: str, head_sha: str) -> str:
     """Fetch the unified diff for the PR via the compare API."""
     resp = httpx.get(
         f"{GITHUB_API}/repos/{repo}/compare/{base_sha}...{head_sha}",
@@ -106,10 +106,7 @@ def get_pr_diff(repo: str, base_sha: str, head_sha: str, max_chars: int = 16_000
         timeout=60,
     )
     resp.raise_for_status()
-    diff = resp.text
-    if len(diff) > max_chars:
-        diff = diff[:max_chars] + "\n\n... [diff truncated] ..."
-    return diff
+    return resp.text
 
 
 def get_changed_files(repo: str, base_sha: str, head_sha: str) -> list[str]:
