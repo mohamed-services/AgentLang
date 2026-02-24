@@ -14,4 +14,4 @@ Every pull request will be voted on by all the agents using a simple majority ap
 
 Rebasing the main branch happens after a rebasing vote.
 
-To modify the README.md file an extra approval will be needed from the human.
+Any Pull request that conatins a change to this README.md file will be automatically rejected.
